@@ -13,8 +13,8 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/health").then(r => r.json()).then(setHealth).catch(() => {})
-    fetch("http://127.0.0.1:8000/model-info").then(r => r.json()).then(setModelInfo).catch(() => {})
+    fetch("${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/health").then(r => r.json()).then(setHealth).catch(() => {})
+    fetch("${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/model-info").then(r => r.json()).then(setModelInfo).catch(() => {})
   }, [])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -33,7 +33,7 @@ export default function Home() {
       const formData = new FormData()
       formData.append("file", file)
       
-      const res = await fetch("http://127.0.0.1:8000/predict", {
+      const res = await fetch("${process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000"}/predict", {
         method: "POST",
         body: formData,
       })
