@@ -1,12 +1,15 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 import uvicorn
 import torch
 import torch.nn.functional as F
-from PIL import Image
+from PIL import Image, ImageDraw
 import io
 import sys
 import os
+import time
+import numpy as np
 
 # Ensure config models can be imported
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -19,7 +22,13 @@ from utils.logger import get_logger
 
 logger = get_logger(__name__)
 
-app = FastAPI(title="Crop AI Few-Shot Classifier")
+app = FastAPI(
+    title="Crop AI Few-Shot Classifier",
+    description="Prototypical Network for crop stress detection with <50 labeled images per class.",
+    version="1.0.0"
+)
+
+START_TIME = time.time()
 
 app.add_middleware(
     CORSMiddleware,
@@ -61,6 +70,29 @@ def load_model():
             
     prototypes = model.compute_prototypes(torch.cat(all_emb), torch.cat(all_labels))
     logger.info("Prototypes successfully pre-computed and cached.")
+
+@app.get("/health")
+def health_check():
+    return {
+        "status": "ok",
+        "model_loaded": model is not None,
+        "prototypes_ready": prototypes is not None,
+        "uptime_seconds": round(time.time() - START_TIME, 2),
+        "device": cfg.DEVICE
+    }
+
+@app.get("/model-info")
+def model_info():
+    ckpt_path = os.path.join(cfg.CHECKPOINT_DIR, "best_protonet.pth")
+    return {
+        "classes": cfg.CLASSES,
+        "backbone": "ResNet50 (Transfer Learning, layer4 fine-tuned)",
+        "algorithm": "Prototypical Networks (Euclidean Distance)",
+        "pseudo_label_threshold": cfg.PSEUDO_LABEL_THRESHOLD,
+        "checkpoint_exists": os.path.exists(ckpt_path),
+        "n_way": cfg.N_WAY,
+        "k_shot": cfg.K_SHOT
+    }
 
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):

@@ -1,14 +1,21 @@
 "use client"
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { UploadCloud, Activity, Zap, CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react"
+import { UploadCloud, Activity, Zap, CheckCircle2, AlertTriangle, ShieldAlert, Server, Brain } from "lucide-react"
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null)
   const [preview, setPreview] = useState<string | null>(null)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [result, setResult] = useState<any>(null)
+  const [modelInfo, setModelInfo] = useState<any>(null)
+  const [health, setHealth] = useState<any>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:8000/health").then(r => r.json()).then(setHealth).catch(() => {})
+    fetch("http://127.0.0.1:8000/model-info").then(r => r.json()).then(setModelInfo).catch(() => {})
+  }, [])
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = e.target.files?.[0]
